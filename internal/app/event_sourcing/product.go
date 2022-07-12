@@ -45,3 +45,21 @@ func (pse productSupplyEvent) Apply(state *current_state.CurrentState) (error, *
 func (pse productSupplyEvent) Display() {
 	log.Printf("Supply order for product (%s) registered with quantity: %v, status: %s at %d\n", pse.productName, pse.qty, pse.status, pse.timestamp)
 }
+
+type productDemandEvent struct {
+	id          uuid.UUID
+	productName string
+	price       float64
+	qty         float64
+	status      string
+	timestamp   int64
+}
+
+func NewProductDemandEvent(productName string, price, quantity float64) Event {
+	return productDemandEvent{
+		id:          uuid.New(),
+		productName: productName,
+		price:       price,
+		qty:         quantity,
+	}
+}

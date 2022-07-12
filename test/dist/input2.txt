@@ -1,0 +1,7 @@
+d1 09:47 tomato 110/kg 1kg
+d2 09:45 potato 110/kg 10kg
+d3 09:48 tomato 110/kg 10kg
+s1 09:45 potato 110/kg 1kg
+s2 09:45 potato 110/kg 7kg
+s3 09:45 potato 110/kg 2kg
+s4 09:45 tomato 110/kg 11kg

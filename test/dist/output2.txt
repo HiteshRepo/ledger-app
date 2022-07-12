@@ -1,0 +1,5 @@
+d2 s1 110/kg 1kg
+d2 s2 110/kg 7kg
+d2 s3 110/kg 2kg
+d1 s4 110/kg 1kg
+d3 s4 110/kg 10kg

@@ -1,0 +1,4 @@
+d1 s2 20/kg 90kg
+d1 s3 19/kg 20kg
+d2 s3 19/kg 10kg
+d3 s3 19/kg 20kg

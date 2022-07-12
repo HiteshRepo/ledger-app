@@ -1,4 +1,4 @@
-package book_keeping
+package comparator
 
 import (
 	"github.com/hiteshpattanayak-tw/SupplyDemandLedger/internal/app/models/order"

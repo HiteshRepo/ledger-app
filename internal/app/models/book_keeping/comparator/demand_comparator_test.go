@@ -1,7 +1,7 @@
-package book_keeping_test
+package comparator_test
 
 import (
-	"github.com/hiteshpattanayak-tw/SupplyDemandLedger/internal/app/models/book_keeping"
+	"github.com/hiteshpattanayak-tw/SupplyDemandLedger/internal/app/models/book_keeping/comparator"
 	"github.com/hiteshpattanayak-tw/SupplyDemandLedger/internal/app/models/order"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/suite"
@@ -12,7 +12,7 @@ import (
 
 type demandComparatorSuite struct {
 	suite.Suite
-	comparator book_keeping.Comparator
+	comparator comparator.Comparator
 }
 
 func TestDemandComparatorSuite(t *testing.T) {
@@ -20,7 +20,7 @@ func TestDemandComparatorSuite(t *testing.T) {
 }
 
 func (suite *demandComparatorSuite) SetupTest() {
-	suite.comparator = book_keeping.ProvideDemandComparator()
+	suite.comparator = comparator.ProvideDemandComparator()
 }
 
 func (suite *demandComparatorSuite) TestSortsByPriceInDescending() {

@@ -1,7 +1,8 @@
-package book_keeping
+package book_side
 
 import (
 	"github.com/hashicorp/go-multierror"
+	comparator2 "github.com/hiteshpattanayak-tw/SupplyDemandLedger/internal/app/models/book_keeping/comparator"
 	"github.com/hiteshpattanayak-tw/SupplyDemandLedger/internal/app/models/order"
 	"sort"
 	"sync"
@@ -15,7 +16,7 @@ type orderBookSide struct {
 	mtx sync.RWMutex
 
 	orders     []*order.Order
-	comparator Comparator
+	comparator comparator2.Comparator
 }
 
 func (a *orderBookSide) GetOrders() []*order.Order {
@@ -25,7 +26,7 @@ func (a *orderBookSide) GetOrders() []*order.Order {
 	return a.orders
 }
 
-func (a *orderBookSide) SetComparator(comparator Comparator) {
+func (a *orderBookSide) SetComparator(comparator comparator2.Comparator) {
 	a.mtx.Lock()
 	defer a.mtx.Unlock()
 

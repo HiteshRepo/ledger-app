@@ -23,6 +23,37 @@ func NewProduct(id string, name string) *Product {
 	}
 }
 
+func (p *Product) SupplyProduct(price, quantity float64) (error, *order.Order, *order.Order) {
+	ev := event_sourcing.NewProductSupplyEvent(p.name, price, quantity)
+
+	err, matchDemand, matchSupply := p.AddEvent(ev)
+	if err != nil {
+		return err, nil, nil
+	}
+
+	return nil, matchDemand, matchSupply
+}
+
+func (p *Product) DemandProduct(price, quantity float64) (error, *order.Order, *order.Order) {
+	ev := event_sourcing.NewProductDemandEvent(p.name, price, quantity)
+
+	err, matchDemand, matchSupply := p.AddEvent(ev)
+	if err != nil {
+		return err, nil, nil
+	}
+
+	return nil, matchDemand, matchSupply
+}
+
+func (p *Product) TradeProduct(matchSupply, matchDemand *order.Order) error {
+	ev := event_sourcing.NewTradeEvent(matchSupply, matchDemand)
+	err, _, _ := p.AddEvent(ev)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
 
 func (p *Product) GetCurrentState() *current_state.CurrentState {
 	return p.currentState

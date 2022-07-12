@@ -25,3 +25,23 @@ func ProvideOrderBook(demandComparator, supplyComparator comparator.Comparator) 
 
 	return &orderBook{supplies: supplyBookSide, demands: demandBookSide}
 }
+
+func (m *orderBook) Get() (demands []*order.Order, supplies []*order.Order) {
+	demands = m.demands.GetOrders()
+	supplies = m.supplies.GetOrders()
+	return
+}
+
+func (m *orderBook) Update(incomingDemands []*order.Order, incomingSupplies []*order.Order) error {
+	err := m.demands.UpdateOrders(incomingDemands)
+	if err != nil {
+		return err
+	}
+
+	err = m.supplies.UpdateOrders(incomingSupplies)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

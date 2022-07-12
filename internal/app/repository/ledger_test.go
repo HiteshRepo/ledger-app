@@ -29,12 +29,12 @@ func TestLedgerRepository_Get(t *testing.T) {
 	assert.Nil(t, matchDemand)
 	assert.Nil(t, matchSupply)
 
-	err, matchDemand, matchSupply = newProduct.DemandProduct(200, 15)
+	err, matchDemand, matchSupply = newProduct.DemandProduct(99, 15)
 	require.NoError(t, err)
 	assert.Nil(t, matchDemand)
 	assert.Nil(t, matchSupply)
 
-	err, matchDemand, matchSupply = newProduct.DemandProduct(100, 20)
+	err, matchDemand, matchSupply = newProduct.DemandProduct(100, 16)
 	require.NoError(t, err)
 	require.NotNil(t, matchDemand)
 	require.NotNil(t, matchSupply)
@@ -48,11 +48,11 @@ func TestLedgerRepository_Get(t *testing.T) {
 	expectedEvents := []event_sourcing.Event{
 		event_sourcing.NewProductSupplyEvent(name, 500, 11),
 		event_sourcing.NewProductSupplyEvent(name, 100, 20),
-		event_sourcing.NewProductDemandEvent(name, 200, 15),
-		event_sourcing.NewProductDemandEvent(name, 100, 20),
+		event_sourcing.NewProductDemandEvent(name, 99, 15),
+		event_sourcing.NewProductDemandEvent(name, 100, 16),
 		event_sourcing.NewTradeEvent(
-			&order.Order{Price: decimal.NewFromFloat(100), Qty: decimal.NewFromFloat(20)},
-			&order.Order{Price: decimal.NewFromFloat(100), Qty: decimal.NewFromFloat(20)}),
+			&order.Order{Price: decimal.NewFromFloat(100), Qty: decimal.NewFromFloat(16)},
+			&order.Order{Price: decimal.NewFromFloat(100), Qty: decimal.NewFromFloat(16)}),
 	}
 
 	actualProduct := repo.Get(id, name)

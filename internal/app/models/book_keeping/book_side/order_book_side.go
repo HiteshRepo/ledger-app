@@ -75,6 +75,7 @@ func (a *orderBookSide) merge(existOrders, newOrders []*order.Order) ([]*order.O
 				newLen -= 2
 				continue
 			}
+			newOrders = newOrders[1:]
 			newLen -= 1
 			continue
 		}

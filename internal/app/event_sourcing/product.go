@@ -121,7 +121,7 @@ func matchOrder(orderbook order_book.OrderBook, o *order.Order) (bool, *order.Or
 	if strings.ToUpper(strings.TrimSpace(o.OrderType)) == constants.SupplyOrderType {
 		var maxDemand *order.Order
 		for _, d := range demands {
-			if d.Price.GreaterThanOrEqual(o.Price) && d.Qty.Equal(o.Qty) {
+			if d.Price.GreaterThanOrEqual(o.Price) {
 				if maxDemand == nil {
 					maxDemand = d
 					continue
@@ -134,21 +134,14 @@ func matchOrder(orderbook order_book.OrderBook, o *order.Order) (bool, *order.Or
 		}
 
 		if maxDemand != nil {
-			s := *o
-			s.Qty = zero
-
-			d := *maxDemand
-			d.Qty = zero
-
-			_ = orderbook.Update([]*order.Order{&d}, []*order.Order{&s})
-			return true, &d, &s
+			return fulfillOrder(orderbook, maxDemand, o, zero)
 		}
 	}
 
 	if strings.ToUpper(strings.TrimSpace(o.OrderType)) == constants.DemandOrderType {
 		var minSupply *order.Order
 		for _, s := range supplies {
-			if s.Price.LessThanOrEqual(o.Price) && s.Qty.Equal(o.Qty) {
+			if s.Price.LessThanOrEqual(o.Price) {
 				if minSupply == nil {
 					minSupply = s
 					continue
@@ -161,16 +154,61 @@ func matchOrder(orderbook order_book.OrderBook, o *order.Order) (bool, *order.Or
 		}
 
 		if minSupply != nil {
-			s := *minSupply
-			s.Qty = zero
-
-			d := *o
-			d.Qty = zero
-
-			_ = orderbook.Update([]*order.Order{&d}, []*order.Order{&s})
-			return true, &d, &s
+			return fulfillOrder(orderbook, o, minSupply, zero)
 		}
 	}
 
 	return false, nil, nil
+}
+
+func fulfillOrder(orderbook order_book.OrderBook, demand *order.Order, supply *order.Order, zero decimal.Decimal) (bool, *order.Order, *order.Order) {
+	s := *supply
+	d := *demand
+
+	sq, _ := s.Qty.Float64()
+	dq, _ := d.Qty.Float64()
+
+	updatedSupplyQty := decimal.NewFromFloat(sq - dq)
+	if updatedSupplyQty.IsNegative() || updatedSupplyQty.IsZero() {
+		updatedSupplyQty = zero
+	}
+	newSupply := &order.Order{Id: s.Id, Price: s.Price, Qty: updatedSupplyQty, OrderType: constants.SupplyOrderType, Timestamp: s.Timestamp}
+
+	updatedDemandQty := decimal.NewFromFloat(dq - sq)
+	if updatedDemandQty.IsNegative() || updatedDemandQty.IsZero() {
+		updatedDemandQty = zero
+	}
+
+	s.Qty = zero
+	d.Qty = zero
+	newDemand := &order.Order{Id: d.Id, Price: d.Price, Qty: updatedDemandQty, OrderType: constants.DemandOrderType, Timestamp: d.Timestamp}
+
+	_ = orderbook.Update([]*order.Order{&d}, []*order.Order{&s})
+	_ = orderbook.Update([]*order.Order{newDemand}, []*order.Order{newSupply})
+
+	matchDemand := &order.Order{
+		Id:        d.Id,
+		Price:     d.Price,
+		Qty:       max(updatedSupplyQty, updatedDemandQty),
+		OrderType: constants.DemandOrderType,
+		Timestamp: d.Timestamp,
+	}
+
+	matchSupply := &order.Order{
+		Id:        s.Id,
+		Price:     s.Price,
+		Qty:       max(updatedSupplyQty, updatedDemandQty),
+		OrderType: constants.SupplyOrderType,
+		Timestamp: s.Timestamp,
+	}
+
+	return true, matchDemand, matchSupply
+}
+
+
+func max(v1, v2 decimal.Decimal) decimal.Decimal {
+	if v1.GreaterThan(v2) {
+		return v1
+	}
+	return v2
 }

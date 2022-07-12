@@ -1,6 +1,7 @@
 package event_sourcing
 
 import (
+	"errors"
 	"github.com/google/uuid"
 	"github.com/hiteshpattanayak-tw/SupplyDemandLedger/internal/app/models/current_state"
 	"github.com/hiteshpattanayak-tw/SupplyDemandLedger/internal/app/models/order"
@@ -38,10 +39,13 @@ func (pse productSupplyEvent) Apply(state *current_state.CurrentState) (error, *
 	}
 
 	_ = state.OrderBook.Update(nil, []*order.Order{newSupplyOrder})
+	isOrderMatched, d, s := matchOrder(state.OrderBook, newSupplyOrder)
 
-	// match order
+	if !isOrderMatched {
+		return errors.New("order did not match"), nil, nil
+	}
 
-	return nil, nil, nil
+	return nil, d, s
 }
 
 func (pse productSupplyEvent) Display() {
@@ -76,10 +80,13 @@ func (pde productDemandEvent) Apply(state *current_state.CurrentState) (error, *
 	}
 
 	_ = state.OrderBook.Update([]*order.Order{newDemandOrder}, nil)
+	isOrderMatched, d, s := matchOrder(state.OrderBook, newDemandOrder)
 
-	// match order
+	if !isOrderMatched {
+		return errors.New("order did not match"), nil, nil
+	}
 
-	return nil, nil, nil
+	return nil, d, s
 }
 
 func (pde productDemandEvent) Display() {

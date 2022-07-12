@@ -83,3 +83,25 @@ func (pde productDemandEvent) Apply(state *current_state.CurrentState) (error, *
 func (pde productDemandEvent) Display() {
 	log.Printf("Demand order for product (%s) registered with quantity: %v, status: %s at %d\n", pde.productName, pde.qty, pde.status, pde.timestamp)
 }
+
+type tradeEvent struct {
+	id          uuid.UUID
+	supply *order.Order
+	demand *order.Order
+}
+
+func NewTradeEvent(supplyEvent *order.Order, demandEvent *order.Order) Event {
+	return tradeEvent{
+		id:     uuid.New(),
+		supply: supplyEvent,
+		demand: demandEvent,
+	}
+}
+
+func (te tradeEvent) Apply(_ *current_state.CurrentState) (error, *order.Order, *order.Order) {
+	return nil, nil, nil
+}
+
+func (te tradeEvent) Display() {
+	log.Printf("Trade occured with supply id: %v and demand id: %v", te.supply.Id, te.demand.Id)
+}

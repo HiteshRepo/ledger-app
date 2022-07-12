@@ -15,3 +15,17 @@ type orderBookSide struct {
 	orders     []*order.Order
 	comparator Comparator
 }
+
+func (a *orderBookSide) GetOrders() []*order.Order {
+	a.mtx.RLock()
+	defer a.mtx.RUnlock()
+
+	return a.orders
+}
+
+func (a *orderBookSide) SetComparator(comparator Comparator) {
+	a.mtx.Lock()
+	defer a.mtx.Unlock()
+
+	a.comparator = comparator
+}

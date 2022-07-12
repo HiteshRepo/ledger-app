@@ -72,12 +72,12 @@ func (suite *demandComparatorSuite) TestSortsByTimestampInAscending() {
 
 	input := []*order.Order{
 		{Price: decimal.NewFromFloat(200), Qty: decimal.NewFromFloat(11), Timestamp: timeNow.UnixNano()},
-		{Price: decimal.NewFromFloat(200), Qty: decimal.NewFromFloat(11), Timestamp: timeNow.Add(1*time.Second).UnixNano()},
+		{Price: decimal.NewFromFloat(200), Qty: decimal.NewFromFloat(11), Timestamp: timeNow.Add(1 * time.Second).UnixNano()},
 	}
 
 	expected := []*order.Order{
 		{Price: decimal.NewFromFloat(200), Qty: decimal.NewFromFloat(11), Timestamp: timeNow.UnixNano()},
-		{Price: decimal.NewFromFloat(200), Qty: decimal.NewFromFloat(11), Timestamp: timeNow.Add(1*time.Second).UnixNano()},
+		{Price: decimal.NewFromFloat(200), Qty: decimal.NewFromFloat(11), Timestamp: timeNow.Add(1 * time.Second).UnixNano()},
 	}
 
 	sort.Slice(input, func(i, j int) bool {

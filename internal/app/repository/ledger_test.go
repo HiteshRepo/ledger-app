@@ -60,12 +60,11 @@ func TestLedgerRepository_Get(t *testing.T) {
 
 	assert.Len(t, expectedEvents, len(actualEvents))
 
-	for i:=0; i<len(expectedEvents); i++ {
+	for i := 0; i < len(expectedEvents); i++ {
 		assert.Equal(t, typeofobject(expectedEvents[i]), typeofobject(actualEvents[i]))
 	}
 }
 
 func typeofobject(x interface{}) string {
-	return  fmt.Sprintf("%T", x)
+	return fmt.Sprintf("%T", x)
 }
-

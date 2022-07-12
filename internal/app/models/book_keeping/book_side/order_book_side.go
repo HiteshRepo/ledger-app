@@ -68,7 +68,7 @@ func (a *orderBookSide) merge(existOrders, newOrders []*order.Order) ([]*order.O
 	for len(existOrders) > 0 && len(newOrders) > 0 {
 
 		if newOrders[0].Qty.IsZero() {
-			id := getExistingOrderById(newOrders[0].Id ,existOrders)
+			id := getExistingOrderById(newOrders[0].Id, existOrders)
 			if id != -1 {
 				existOrders = append(existOrders[0:id], existOrders[id+1:]...)
 				newOrders = newOrders[1:]
@@ -122,7 +122,7 @@ func (a *orderBookSide) merge(existOrders, newOrders []*order.Order) ([]*order.O
 }
 
 func getExistingOrderById(id string, existOrders []*order.Order) int {
-	for i,e := range existOrders {
+	for i, e := range existOrders {
 		if e.Id == id {
 			return i
 		}

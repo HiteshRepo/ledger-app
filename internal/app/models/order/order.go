@@ -9,6 +9,5 @@ type Order struct {
 	Price     shopspring.Decimal
 	Qty       shopspring.Decimal
 	OrderType string
-	Status    string
 	Timestamp int64
 }

@@ -17,7 +17,7 @@ func (wr *LedgerRepository) Get(id string, name string) *product.Product {
 	newProduct := product.NewProduct(id, name)
 
 	if events, ok := wr.inMemoryLedger[id]; ok {
-		for _,e := range events {
+		for _, e := range events {
 			_, _, _ = newProduct.AddEvent(e)
 		}
 	}
@@ -25,6 +25,6 @@ func (wr *LedgerRepository) Get(id string, name string) *product.Product {
 	return newProduct
 }
 
-func (wr *LedgerRepository) Save(product *product.Product)  {
+func (wr *LedgerRepository) Save(product *product.Product) {
 	wr.inMemoryLedger[product.Id] = product.GetEvents()
 }

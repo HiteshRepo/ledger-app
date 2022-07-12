@@ -3,6 +3,7 @@ package event_sourcing
 import (
 	"errors"
 	"github.com/google/uuid"
+	"github.com/hiteshpattanayak-tw/SupplyDemandLedger/internal/app/constants"
 	"github.com/hiteshpattanayak-tw/SupplyDemandLedger/internal/app/models/current_state"
 	"github.com/hiteshpattanayak-tw/SupplyDemandLedger/internal/app/models/order"
 	"github.com/hiteshpattanayak-tw/SupplyDemandLedger/internal/app/models/order_book"
@@ -34,15 +35,14 @@ func (pse productSupplyEvent) Apply(state *current_state.CurrentState) (error, *
 		Id:        uuid.New().String(),
 		Price:     decimal.NewFromFloat(pse.price),
 		Qty:       decimal.NewFromFloat(pse.qty),
-		OrderType: "supply",
-		Status:    "pending",
+		OrderType: constants.SupplyOrderType,
 	}
 
 	_ = state.OrderBook.Update(nil, []*order.Order{newSupplyOrder})
 	isOrderMatched, d, s := matchOrder(state.OrderBook, newSupplyOrder)
 
 	if !isOrderMatched {
-		return errors.New("order did not match"), nil, nil
+		return errors.New(constants.OrderMismatchErrorMessage), nil, nil
 	}
 
 	return nil, d, s
@@ -75,15 +75,14 @@ func (pde productDemandEvent) Apply(state *current_state.CurrentState) (error, *
 		Id:        uuid.New().String(),
 		Price:     decimal.NewFromFloat(pde.price),
 		Qty:       decimal.NewFromFloat(pde.qty),
-		OrderType: "demand",
-		Status:    "pending",
+		OrderType: constants.DemandOrderType,
 	}
 
 	_ = state.OrderBook.Update([]*order.Order{newDemandOrder}, nil)
 	isOrderMatched, d, s := matchOrder(state.OrderBook, newDemandOrder)
 
 	if !isOrderMatched {
-		return errors.New("order did not match"), nil, nil
+		return errors.New(constants.OrderMismatchErrorMessage), nil, nil
 	}
 
 	return nil, d, s
@@ -94,7 +93,7 @@ func (pde productDemandEvent) Display() {
 }
 
 type tradeEvent struct {
-	id          uuid.UUID
+	id     uuid.UUID
 	supply *order.Order
 	demand *order.Order
 }
@@ -119,7 +118,7 @@ func matchOrder(orderbook order_book.OrderBook, o *order.Order) (bool, *order.Or
 	zero := decimal.NewFromInt(0)
 	demands, supplies := orderbook.Get()
 
-	if strings.ToUpper(strings.TrimSpace(o.OrderType)) == "SUPPLY" {
+	if strings.ToUpper(strings.TrimSpace(o.OrderType)) == constants.SupplyOrderType {
 		var maxDemand *order.Order
 		for _, d := range demands {
 			if d.Price.GreaterThanOrEqual(o.Price) && d.Qty.Equal(o.Qty) {
@@ -146,7 +145,7 @@ func matchOrder(orderbook order_book.OrderBook, o *order.Order) (bool, *order.Or
 		}
 	}
 
-	if strings.ToUpper(strings.TrimSpace(o.OrderType)) == "DEMAND" {
+	if strings.ToUpper(strings.TrimSpace(o.OrderType)) == constants.DemandOrderType {
 		var minSupply *order.Order
 		for _, s := range supplies {
 			if s.Price.LessThanOrEqual(o.Price) && s.Qty.Equal(o.Qty) {

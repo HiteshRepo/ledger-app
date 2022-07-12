@@ -2,6 +2,7 @@ package event_sourcing_test
 
 import (
 	"github.com/google/uuid"
+	"github.com/hiteshpattanayak-tw/SupplyDemandLedger/internal/app/constants"
 	"github.com/hiteshpattanayak-tw/SupplyDemandLedger/internal/app/event_sourcing"
 	"github.com/hiteshpattanayak-tw/SupplyDemandLedger/internal/app/models/book_keeping/comparator"
 	"github.com/hiteshpattanayak-tw/SupplyDemandLedger/internal/app/models/current_state"
@@ -50,7 +51,7 @@ func (suite *productEventsSuite) TestProductSupplyEvent_ShouldAddToExistingSuppl
 
 	err, matchDemand, matchSupply := pse.Apply(suite.currentState)
 	suite.Require().Error(err)
-	suite.Assert().Contains(err.Error(), "order did not match")
+	suite.Assert().Contains(err.Error(), constants.OrderMismatchErrorMessage)
 	suite.Assert().Nil(matchDemand)
 	suite.Assert().Nil(matchSupply)
 
@@ -99,7 +100,7 @@ func (suite *productEventsSuite) TestProductDemandEvent_ShouldAddToExistingDeman
 
 	err, matchDemand, matchSupply := pde.Apply(suite.currentState)
 	suite.Require().Error(err)
-	suite.Assert().Contains(err.Error(), "order did not match")
+	suite.Assert().Contains(err.Error(), constants.OrderMismatchErrorMessage)
 	suite.Assert().Nil(matchDemand)
 	suite.Assert().Nil(matchSupply)
 

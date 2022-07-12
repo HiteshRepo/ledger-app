@@ -1,6 +1,7 @@
 package product
 
 import (
+	"github.com/hiteshpattanayak-tw/SupplyDemandLedger/internal/app/constants"
 	"github.com/hiteshpattanayak-tw/SupplyDemandLedger/internal/app/event_sourcing"
 	"github.com/hiteshpattanayak-tw/SupplyDemandLedger/internal/app/models/book_keeping/comparator"
 	"github.com/hiteshpattanayak-tw/SupplyDemandLedger/internal/app/models/current_state"
@@ -62,7 +63,7 @@ func (p *Product) GetCurrentState() *current_state.CurrentState {
 func (p *Product) AddEvent(ev event_sourcing.Event) (error, *order.Order, *order.Order) {
 	err, matchDemand, matchSupply := ev.Apply(p.currentState)
 
-	if err != nil && err.Error() != "order did not match" {
+	if err != nil && err.Error() != constants.OrderMismatchErrorMessage {
 		return err, nil, nil
 	}
 

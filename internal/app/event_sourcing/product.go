@@ -4,8 +4,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/hiteshpattanayak-tw/SupplyDemandLedger/internal/app/models/current_state"
 	"github.com/hiteshpattanayak-tw/SupplyDemandLedger/internal/app/models/order"
+	"github.com/hiteshpattanayak-tw/SupplyDemandLedger/internal/app/models/order_book"
 	"github.com/shopspring/decimal"
 	"log"
+	"strings"
 )
 
 type productSupplyEvent struct {
@@ -104,4 +106,65 @@ func (te tradeEvent) Apply(_ *current_state.CurrentState) (error, *order.Order, 
 
 func (te tradeEvent) Display() {
 	log.Printf("Trade occured with supply id: %v and demand id: %v", te.supply.Id, te.demand.Id)
+}
+
+func matchOrder(orderbook order_book.OrderBook, o *order.Order) (bool, *order.Order, *order.Order) {
+	zero := decimal.NewFromInt(0)
+	demands, supplies := orderbook.Get()
+
+	if strings.ToUpper(strings.TrimSpace(o.OrderType)) == "SUPPLY" {
+		var maxDemand *order.Order
+		for _, d := range demands {
+			if d.Price.GreaterThanOrEqual(o.Price) && d.Qty.Equal(o.Qty) {
+				if maxDemand == nil {
+					maxDemand = d
+					continue
+				}
+
+				if maxDemand.Price.LessThan(d.Price) {
+					maxDemand = d
+				}
+			}
+		}
+
+		if maxDemand != nil {
+			s := *o
+			s.Qty = zero
+
+			d := *maxDemand
+			d.Qty = zero
+
+			_ = orderbook.Update([]*order.Order{&d}, []*order.Order{&s})
+			return true, &d, &s
+		}
+	}
+
+	if strings.ToUpper(strings.TrimSpace(o.OrderType)) == "DEMAND" {
+		var minSupply *order.Order
+		for _, s := range supplies {
+			if s.Price.LessThanOrEqual(o.Price) && s.Qty.Equal(o.Qty) {
+				if minSupply == nil {
+					minSupply = s
+					continue
+				}
+
+				if minSupply.Price.GreaterThan(s.Price) {
+					minSupply = s
+				}
+			}
+		}
+
+		if minSupply != nil {
+			s := *minSupply
+			s.Qty = zero
+
+			d := *o
+			d.Qty = zero
+
+			_ = orderbook.Update([]*order.Order{&d}, []*order.Order{&s})
+			return true, &d, &s
+		}
+	}
+
+	return false, nil, nil
 }

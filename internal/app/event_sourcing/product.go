@@ -63,3 +63,23 @@ func NewProductDemandEvent(productName string, price, quantity float64) Event {
 		qty:         quantity,
 	}
 }
+
+func (pde productDemandEvent) Apply(state *current_state.CurrentState) (error, *order.Order, *order.Order) {
+	newDemandOrder := &order.Order{
+		Id:        uuid.New().String(),
+		Price:     decimal.NewFromFloat(pde.price),
+		Qty:       decimal.NewFromFloat(pde.qty),
+		OrderType: "demand",
+		Status:    "pending",
+	}
+
+	_ = state.OrderBook.Update([]*order.Order{newDemandOrder}, nil)
+
+	// match order
+
+	return nil, nil, nil
+}
+
+func (pde productDemandEvent) Display() {
+	log.Printf("Demand order for product (%s) registered with quantity: %v, status: %s at %d\n", pde.productName, pde.qty, pde.status, pde.timestamp)
+}

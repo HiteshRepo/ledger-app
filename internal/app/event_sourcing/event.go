@@ -6,6 +6,6 @@ import (
 )
 
 type Event interface {
-	Apply(currState *current_state.CurrentState) (error, *order.Order, *order.Order)
+	Apply(currState *current_state.CurrentState) (error, []*order.Order, []*order.Order)
 	Display()
 }

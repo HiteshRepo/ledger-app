@@ -11,7 +11,7 @@ func ProvideSupplyComparator() Comparator {
 		}
 
 		if order1.Price.Equal((*order2).Price) {
-			return order1.Qty.Cmp((*order2).Qty), nil
+			return order2.Qty.Cmp((*order1).Qty), nil
 		}
 
 		return order2.Price.Cmp((*order1).Price), nil

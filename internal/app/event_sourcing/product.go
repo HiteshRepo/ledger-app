@@ -30,7 +30,7 @@ func NewProductSupplyEvent(productName string, price, quantity float64) Event {
 	}
 }
 
-func (pse productSupplyEvent) Apply(state *current_state.CurrentState) (error, *order.Order, *order.Order) {
+func (pse productSupplyEvent) Apply(state *current_state.CurrentState) (error, []*order.Order, []*order.Order) {
 	newSupplyOrder := &order.Order{
 		Id:        uuid.New().String(),
 		Price:     decimal.NewFromFloat(pse.price),
@@ -39,9 +39,9 @@ func (pse productSupplyEvent) Apply(state *current_state.CurrentState) (error, *
 	}
 
 	_ = state.OrderBook.Update(nil, []*order.Order{newSupplyOrder})
-	isOrderMatched, d, s := matchOrder(state.OrderBook, newSupplyOrder)
+	d, s := matchOrder(state.OrderBook, newSupplyOrder)
 
-	if !isOrderMatched {
+	if len(d) == 0 && len(s) == 0 {
 		return errors.New(constants.OrderMismatchErrorMessage), nil, nil
 	}
 
@@ -70,7 +70,7 @@ func NewProductDemandEvent(productName string, price, quantity float64) Event {
 	}
 }
 
-func (pde productDemandEvent) Apply(state *current_state.CurrentState) (error, *order.Order, *order.Order) {
+func (pde productDemandEvent) Apply(state *current_state.CurrentState) (error, []*order.Order, []*order.Order) {
 	newDemandOrder := &order.Order{
 		Id:        uuid.New().String(),
 		Price:     decimal.NewFromFloat(pde.price),
@@ -79,9 +79,9 @@ func (pde productDemandEvent) Apply(state *current_state.CurrentState) (error, *
 	}
 
 	_ = state.OrderBook.Update([]*order.Order{newDemandOrder}, nil)
-	isOrderMatched, d, s := matchOrder(state.OrderBook, newDemandOrder)
+	d, s := matchOrder(state.OrderBook, newDemandOrder)
 
-	if !isOrderMatched {
+	if len(d) == 0 && len(s) == 0 {
 		return errors.New(constants.OrderMismatchErrorMessage), nil, nil
 	}
 
@@ -106,7 +106,7 @@ func NewTradeEvent(supplyEvent *order.Order, demandEvent *order.Order) Event {
 	}
 }
 
-func (te tradeEvent) Apply(_ *current_state.CurrentState) (error, *order.Order, *order.Order) {
+func (te tradeEvent) Apply(_ *current_state.CurrentState) (error, []*order.Order, []*order.Order) {
 	return nil, nil, nil
 }
 
@@ -114,51 +114,78 @@ func (te tradeEvent) Display() {
 	log.Printf("Trade occured with supply id: %v and demand id: %v", te.supply.Id, te.demand.Id)
 }
 
-func matchOrder(orderbook order_book.OrderBook, o *order.Order) (bool, *order.Order, *order.Order) {
+func matchOrder(orderbook order_book.OrderBook, o *order.Order) ([]*order.Order, []*order.Order) {
 	zero := decimal.NewFromInt(0)
-	demands, supplies := orderbook.Get()
+	currentOrder := *o
 
-	if strings.ToUpper(strings.TrimSpace(o.OrderType)) == constants.SupplyOrderType {
-		var maxDemand *order.Order
-		for _, d := range demands {
-			if d.Price.GreaterThanOrEqual(o.Price) {
-				if maxDemand == nil {
-					maxDemand = d
-					continue
-				}
+	matchDemands := make([]*order.Order, 0)
+	matchSupplies := make([]*order.Order, 0)
 
-				if maxDemand.Price.LessThan(d.Price) {
-					maxDemand = d
+	var matchSupply, matchDemand *order.Order
+
+	if strings.ToUpper(strings.TrimSpace(currentOrder.OrderType)) == constants.SupplyOrderType {
+		isFullFillPossible := true
+		for isFullFillPossible && currentOrder.Qty.GreaterThan(zero) {
+			var maxDemand *order.Order
+			demands, _ := orderbook.Get()
+			for _, d := range demands {
+				if d.Price.GreaterThanOrEqual(currentOrder.Price) {
+					if maxDemand == nil {
+						maxDemand = d
+						continue
+					}
+
+					if maxDemand.Price.LessThan(d.Price) {
+						maxDemand = d
+					}
 				}
 			}
-		}
 
-		if maxDemand != nil {
-			return fulfillOrder(orderbook, maxDemand, o, zero)
+			if maxDemand != nil {
+				isFullFillPossible, matchDemand, matchSupply = fulfillOrder(orderbook, maxDemand, &currentOrder, zero)
+				if isFullFillPossible {
+					matchDemands = append(matchDemands, matchDemand)
+					matchSupplies = append(matchSupplies, matchSupply)
+					currentOrder.Qty = currentOrder.Qty.Sub(matchDemand.Qty)
+				}
+			} else {
+				isFullFillPossible = false
+			}
 		}
 	}
 
-	if strings.ToUpper(strings.TrimSpace(o.OrderType)) == constants.DemandOrderType {
-		var minSupply *order.Order
-		for _, s := range supplies {
-			if s.Price.LessThanOrEqual(o.Price) {
-				if minSupply == nil {
-					minSupply = s
-					continue
-				}
+	if strings.ToUpper(strings.TrimSpace(currentOrder.OrderType)) == constants.DemandOrderType {
+		isFullFillPossible := true
+		for isFullFillPossible && currentOrder.Qty.GreaterThan(zero) {
+			_, supplies := orderbook.Get()
+			var minSupply *order.Order
+			for _, s := range supplies {
+				if s.Price.LessThanOrEqual(currentOrder.Price) {
+					if minSupply == nil {
+						minSupply = s
+						continue
+					}
 
-				if minSupply.Price.GreaterThan(s.Price) {
-					minSupply = s
+					if minSupply.Price.GreaterThan(s.Price) {
+						minSupply = s
+					}
 				}
 			}
-		}
 
-		if minSupply != nil {
-			return fulfillOrder(orderbook, o, minSupply, zero)
+			if minSupply != nil {
+				isFullFillPossible, matchDemand, matchSupply = fulfillOrder(orderbook, &currentOrder, minSupply, zero)
+				if isFullFillPossible {
+					matchDemands = append(matchDemands, matchDemand)
+					matchSupplies = append(matchSupplies, matchSupply)
+					currentOrder.Qty = currentOrder.Qty.Sub(matchSupply.Qty)
+				}
+			} else {
+				isFullFillPossible = false
+			}
 		}
 	}
 
-	return false, nil, nil
+	return matchDemands, matchSupplies
 }
 
 func fulfillOrder(orderbook order_book.OrderBook, demand *order.Order, supply *order.Order, zero decimal.Decimal) (bool, *order.Order, *order.Order) {
@@ -186,10 +213,12 @@ func fulfillOrder(orderbook order_book.OrderBook, demand *order.Order, supply *o
 	_ = orderbook.Update([]*order.Order{&d}, []*order.Order{&s})
 	_ = orderbook.Update([]*order.Order{newDemand}, []*order.Order{newSupply})
 
+	fullFilledQty := min(supply.Qty, demand.Qty)
+
 	matchDemand := &order.Order{
 		Id:        d.Id,
 		Price:     d.Price,
-		Qty:       max(updatedSupplyQty, updatedDemandQty),
+		Qty:       fullFilledQty,
 		OrderType: constants.DemandOrderType,
 		Timestamp: d.Timestamp,
 	}
@@ -197,7 +226,7 @@ func fulfillOrder(orderbook order_book.OrderBook, demand *order.Order, supply *o
 	matchSupply := &order.Order{
 		Id:        s.Id,
 		Price:     s.Price,
-		Qty:       max(updatedSupplyQty, updatedDemandQty),
+		Qty:       fullFilledQty,
 		OrderType: constants.SupplyOrderType,
 		Timestamp: s.Timestamp,
 	}
@@ -208,6 +237,13 @@ func fulfillOrder(orderbook order_book.OrderBook, demand *order.Order, supply *o
 
 func max(v1, v2 decimal.Decimal) decimal.Decimal {
 	if v1.GreaterThan(v2) {
+		return v1
+	}
+	return v2
+}
+
+func min(v1, v2 decimal.Decimal) decimal.Decimal {
+	if v1.LessThan(v2) {
 		return v1
 	}
 	return v2

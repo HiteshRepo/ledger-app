@@ -24,7 +24,7 @@ func NewProduct(id string, name string) *Product {
 	}
 }
 
-func (p *Product) SupplyProduct(price, quantity float64) (error, *order.Order, *order.Order) {
+func (p *Product) SupplyProduct(price, quantity float64) (error, []*order.Order, []*order.Order) {
 	ev := event_sourcing.NewProductSupplyEvent(p.name, price, quantity)
 
 	err, matchDemand, matchSupply := p.AddEvent(ev)
@@ -35,7 +35,7 @@ func (p *Product) SupplyProduct(price, quantity float64) (error, *order.Order, *
 	return nil, matchDemand, matchSupply
 }
 
-func (p *Product) DemandProduct(price, quantity float64) (error, *order.Order, *order.Order) {
+func (p *Product) DemandProduct(price, quantity float64) (error, []*order.Order, []*order.Order) {
 	ev := event_sourcing.NewProductDemandEvent(p.name, price, quantity)
 
 	err, matchDemand, matchSupply := p.AddEvent(ev)
@@ -60,7 +60,7 @@ func (p *Product) GetCurrentState() *current_state.CurrentState {
 	return p.currentState
 }
 
-func (p *Product) AddEvent(ev event_sourcing.Event) (error, *order.Order, *order.Order) {
+func (p *Product) AddEvent(ev event_sourcing.Event) (error, []*order.Order, []*order.Order) {
 	err, matchDemand, matchSupply := ev.Apply(p.currentState)
 
 	if err != nil && err.Error() != constants.OrderMismatchErrorMessage {

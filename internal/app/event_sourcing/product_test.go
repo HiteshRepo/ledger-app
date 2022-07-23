@@ -49,11 +49,11 @@ func (suite *productEventsSuite) SetupTest() {
 func (suite *productEventsSuite) TestProductSupplyEvent_ShouldAddToExistingSuppliesIfNoMatchTrade() {
 	pse := event_sourcing.NewProductSupplyEvent("product-1", 500, 10)
 
-	err, matchDemand, matchSupply := pse.Apply(suite.currentState)
+	err, matchDemands, matchSupplies := pse.Apply(suite.currentState)
 	suite.Require().Error(err)
 	suite.Assert().Contains(err.Error(), constants.OrderMismatchErrorMessage)
-	suite.Assert().Nil(matchDemand)
-	suite.Assert().Nil(matchSupply)
+	suite.Assert().Nil(matchDemands)
+	suite.Assert().Nil(matchSupplies)
 
 	expectedSupplies := []*order.Order{
 		{Price: decimal.NewFromFloat(100), Qty: decimal.NewFromFloat(7)},
@@ -75,10 +75,10 @@ func (suite *productEventsSuite) TestProductSupplyEvent_ShouldAddToExistingSuppl
 func (suite *productEventsSuite) TestProductSupplyEvent_ShouldDecreaseFromMatchingDemandsIfMatchTrade() {
 	pse := event_sourcing.NewProductSupplyEvent("product-1", 100, 10)
 
-	err, matchDemand, matchSupply := pse.Apply(suite.currentState)
+	err, matchDemands, matchSupplies := pse.Apply(suite.currentState)
 	suite.Require().NoError(err)
-	suite.Assert().NotNil(matchDemand)
-	suite.Assert().NotNil(matchSupply)
+	suite.Assert().NotNil(matchDemands)
+	suite.Assert().NotNil(matchSupplies)
 
 	expectedSupplies := []*order.Order{
 		{Price: decimal.NewFromFloat(100), Qty: decimal.NewFromFloat(7)},
@@ -99,11 +99,11 @@ func (suite *productEventsSuite) TestProductSupplyEvent_ShouldDecreaseFromMatchi
 func (suite *productEventsSuite) TestProductDemandEvent_ShouldAddToExistingDemandsIfNoMatchTrade() {
 	pde := event_sourcing.NewProductDemandEvent("product-1", 99, 10)
 
-	err, matchDemand, matchSupply := pde.Apply(suite.currentState)
+	err, matchDemands, matchSupplies := pde.Apply(suite.currentState)
 	suite.Require().Error(err)
 	suite.Assert().Contains(err.Error(), constants.OrderMismatchErrorMessage)
-	suite.Assert().Nil(matchDemand)
-	suite.Assert().Nil(matchSupply)
+	suite.Assert().Nil(matchDemands)
+	suite.Assert().Nil(matchSupplies)
 
 	expectedSupplies := []*order.Order{
 		{Price: decimal.NewFromFloat(100), Qty: decimal.NewFromFloat(7)},
@@ -125,10 +125,10 @@ func (suite *productEventsSuite) TestProductDemandEvent_ShouldAddToExistingDeman
 func (suite *productEventsSuite) TestProductDemandEvent_ShouldRemoveFromExistingSuppliesIfMatchTrade() {
 	pde := event_sourcing.NewProductDemandEvent("product-1", 100, 6)
 
-	err, matchDemand, matchSupply := pde.Apply(suite.currentState)
+	err, matchDemands, matchSupplies := pde.Apply(suite.currentState)
 	suite.Require().NoError(err)
-	suite.Assert().NotNil(matchDemand)
-	suite.Assert().NotNil(matchSupply)
+	suite.Assert().NotNil(matchDemands)
+	suite.Assert().NotNil(matchSupplies)
 
 	expectedSupplies := []*order.Order{
 		{Price: decimal.NewFromFloat(100), Qty: decimal.NewFromFloat(1)},
